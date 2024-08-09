@@ -32,12 +32,23 @@ Se está utilizando Mongo DB para persistir los datos del Backend
 $ docker compose up -d
 ```
 
-### Cadena de Conexión a MongoDb
+## Variables de Entorno
 
-Copiar el archivo `.env.template` a `.env` y especificar la url en la que escucha MongoDb.
+Copiar el archivo `.env.template` a `.env` y especificar la url en la que escucha MongoDb y las variables para la generación del token JWT (SEED y EXPIRATION).
+
+### Cadena de Conexión a MongoDb
 
 Por ejemplo:
 
 ```plaintext
 MONGO_URI=mongodb://localhost:27017/database
+```
+
+### JWT Token Generator
+
+Por ejemplo:
+
+```plaintext
+JWT_SEED=<frase-totalmente-secreta>
+JWT_EXPIRATION=1h
 ```

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 
@@ -7,9 +7,7 @@ import { Model } from 'mongoose';
 
 import { User } from './entities/user.entity';
 
-import { JwtPayload } from './interfaces/jwt-payload';
-import { LoginResponse } from './interfaces/login-response';
-
+import { JwtPayload, LoginResponse, UserResponse } from './interfaces';
 import { CreateUserDto, LoginDto, RegisterUserDto, UpdateUserDto } from './dto';
 
 
@@ -21,10 +19,10 @@ export class AuthService {
     private userModel: Model<User>,
 
     private jwtService: JwtService
-  ) {}
+  ) { }
 
-  async loginAsync(loginDto: LoginDto) : Promise<LoginResponse> {
-    const {password, email} = loginDto;
+  async loginAsync(loginDto: LoginDto): Promise<LoginResponse> {
+    const { password, email } = loginDto;
 
     // Buscar el usuario en la base de datos
     const user = await this.userModel.findOne({ email });
@@ -39,7 +37,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const {password: _, ...userData } = user.toJSON();
+    const { password: _, ...userData } = user.toJSON();
 
     return {
       user: userData,
@@ -47,7 +45,7 @@ export class AuthService {
     };
   }
 
-  async registerAsync(registerUserDto: RegisterUserDto) : Promise<LoginResponse> {
+  async registerAsync(registerUserDto: RegisterUserDto): Promise<LoginResponse> {
     const user = await this.createAsync(registerUserDto);
 
     return {
@@ -56,11 +54,65 @@ export class AuthService {
     };
   }
 
-  async createAsync(createUserDto: CreateUserDto) : Promise<User> {
+  async findAllAsync(): Promise<UserResponse[]> {
+    const users = await this.userModel.find();
+
+    return users.map(user => {
+      const userJson = user.toJSON();
+
+      // Aquí puedes transformar userJson en FindResponse
+      const findResponse: UserResponse = {
+        _id: userJson._id.toString(),
+        email: userJson.email,
+        name: userJson.name,
+        isActive: userJson.isActive,
+        role: userJson.role,
+        createdAt: userJson.createdAt,
+        updatedAt: userJson.updatedAt
+      };
+
+      return findResponse;
+    });
+  }
+
+  async findOneAsync(id: string): Promise<UserResponse> {
+    try {
+      const user = await this.userModel.findById(id);
+
+      return {
+        _id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        isActive: user.isActive,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      };
+    }
+    catch (e) {
+      throw new NotFoundException('The user does not exist');
+    }
+  }
+
+  async refreshToken(user : UserResponse) : Promise<LoginResponse> {
+    return {
+      user: {
+        email: user.email,
+        name: user.name,
+        isActive: user.isActive,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      },
+      token: this._getJwtToken({ id: user._id })
+    };
+  }
+
+  async createAsync(createUserDto: CreateUserDto): Promise<User> {
     try {
 
       // Encriptar la contraseña antes de guardarla en la base de datos
-      const {password, ...userData} = createUserDto;
+      const { password, ...userData } = createUserDto;
 
       const createdUser = new this.userModel({
         ...userData,
@@ -69,7 +121,7 @@ export class AuthService {
 
       const newUser = await createdUser.save();
 
-      const {password: _, ...user} = newUser.toJSON();
+      const { password: _, ...user } = newUser.toJSON();
       return user;
 
     } catch (error) {
@@ -82,21 +134,13 @@ export class AuthService {
     }
   }
 
-  findAll() {
-    return `This action returns all user`;
-  }
+  // update(id: number, updateUserDto: UpdateUserDto) {
+  //   return `This action updates a #${id} user`;
+  // }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
+  // remove(id: number) {
+  //   return `This action removes a #${id} user`;
+  // }
 
   private _getJwtToken(payload: JwtPayload) {
     return this.jwtService.sign(payload);

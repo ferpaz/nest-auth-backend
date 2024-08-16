@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 
 @Schema()
 export class User {
-    // _id: number;   <-- mongo va a crear un id por defecto con este nombre
+    _id?: number;   // mongo crea un id por defecto con este nombre
 
     @Prop( { required: true, unique: true } )
     email: string;

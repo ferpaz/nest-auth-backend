@@ -8,10 +8,11 @@ import { Model } from 'mongoose';
 import { User } from './entities/user.entity';
 
 import { JwtPayload } from './interfaces/jwt-payload';
+import { LoginResponse } from './interfaces/login-response';
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { LoginDto } from './dto/login.dto';
+import { CreateUserDto, LoginDto, RegisterUserDto, UpdateUserDto } from './dto';
+
+
 
 @Injectable()
 export class AuthService {
@@ -22,7 +23,7 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
-  async loginAsync(loginDto: LoginDto) {
+  async loginAsync(loginDto: LoginDto) : Promise<LoginResponse> {
     const {password, email} = loginDto;
 
     // Buscar el usuario en la base de datos
@@ -46,19 +47,29 @@ export class AuthService {
     };
   }
 
+  async registerAsync(registerUserDto: RegisterUserDto) : Promise<LoginResponse> {
+    const user = await this.createAsync(registerUserDto);
+
+    return {
+      user,
+      token: this._getJwtToken({ id: user._id.toString() })
+    };
+  }
+
   async createAsync(createUserDto: CreateUserDto) : Promise<User> {
     try {
 
       // Encriptar la contraseña antes de guardarla en la base de datos
       const {password, ...userData} = createUserDto;
+
       const createdUser = new this.userModel({
         ...userData,
         password: await bcrypt.hash(password, 10)
       });
 
-      await createdUser.save();
+      const newUser = await createdUser.save();
 
-      const {password: _, ...user} = createdUser.toJSON();
+      const {password: _, ...user} = newUser.toJSON();
       return user;
 
     } catch (error) {

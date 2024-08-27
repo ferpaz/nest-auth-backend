@@ -34,7 +34,9 @@ $ docker compose up -d
 
 ## Variables de Entorno
 
-Copiar el archivo `.env.template` a `.env` y especificar la url en la que escucha MongoDb y las variables para la generación del token JWT (SEED y EXPIRATION).
+Copiar el archivo `.env.template` a `.env` y especificar la url en la que escucha MongoDb y el nombre de la base de datos; además se pueden configurar las variables para la generación del token JWT (SEED y EXPIRATION).
+
+Finalmente se puede especificar el puerto por defecto de escucha de este backend.
 
 ### Cadena de Conexión a MongoDb
 
@@ -42,6 +44,22 @@ Por ejemplo:
 
 ```plaintext
 MONGO_URI=mongodb://localhost:27017/database
+```
+
+### Nombre de la base de datos de Mongo
+
+Por ejemplo:
+
+```plaintext
+MONGO_DB_NAME=auth-db
+```
+
+### Puerto por defecto en el que escucha este backend
+
+Por ejemplo:
+
+```plaintext
+PORT=3000
 ```
 
 ### JWT Token Generator
